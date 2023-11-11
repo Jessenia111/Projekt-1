@@ -1,0 +1,128 @@
+import pygame
+import math
+import random
+pygame.init()
+
+clock = pygame.time.Clock()
+FPS = 60
+
+SCREEN_WIDTH = 1000
+SCREEN_HEIGHT = 600
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Endless Scroll")
+
+bg = pygame.image.load("sky.png").convert()
+bg_width = bg.get_width()
+
+scroll = 0
+titles = math.ceil(SCREEN_WIDTH / bg_width) + 1
+
+class Dog(pygame.sprite.Sprite):
+    def __init__(self, x, y, new_width, new_height):
+        pygame.sprite.Sprite.__init__(self)
+        self.images = []
+        self.index = 0
+        self.counter = 0
+        for num in range(1,4):
+            img = pygame.image.load(f"img_{num}.png")
+            img = pygame.transform.scale(img, (100, 100))
+            self.images.append(img)
+        self.image = self.images[self.index]
+        self.image = pygame.transform.scale(self.image, (new_width, new_height))
+        self.rect = self.image.get_rect()
+        self.rect.center = [x, y]
+        self.vel = 0
+        self.jumping = False
+
+    def update(self):
+
+        self.vel += 0.3
+        if self.vel > 8:
+            self.vel = 8
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE] and not self.jumping and self.rect.bottom >= SCREEN_HEIGHT:
+            self.jumping = True
+            self.vel = -10
+
+        if not self.jumping:
+            if self.rect.bottom < SCREEN_HEIGHT:
+                self.rect.y += int(self.vel)
+            if self.rect.bottom >= SCREEN_HEIGHT:
+                self.rect.bottom = SCREEN_HEIGHT
+
+
+
+        if self.jumping:
+            self.rect.y += int(self.vel)
+            if self.rect.bottom >= SCREEN_HEIGHT:
+                self.jumping = False
+                self.rect.bottom = SCREEN_HEIGHT
+    
+
+
+        self.counter += 1
+        jump_cooldown = 10
+
+        if self.counter > jump_cooldown:
+            self.counter = 0
+            self.index += 1
+            if self.index >= len(self.images):
+                self.index = 0
+            self.image = self.images[self.index]
+
+class Obstacle(pygame.sprite.Sprite):
+    def __init__(self, x, y, width, height, image_path):
+        
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(image_path)
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect()
+        self.rect.center = [x, y]
+                    
+    def update(self):
+        self.rect.x -= 5
+
+obstacle_group = pygame.sprite.Group()
+
+def create_obstacle():
+    obstacle_height = random.randint(50, 100)
+    obstacle = Obstacle(SCREEN_WIDTH, SCREEN_HEIGHT - obstacle_height, 50, obstacle_height, "strawberry cake.png")
+    obstacle_group.add(obstacle)
+
+
+dog_group = pygame.sprite.Group()
+
+moving = Dog(100, int(SCREEN_HEIGHT // 1.3), 150, 150)
+
+dog_group.add(moving)
+
+run = True
+while run:
+    clock.tick(FPS)
+
+    for i in range(0, titles):
+        screen.blit(bg, (i * bg_width + scroll,0))
+
+    dog_group.draw(screen)
+    dog_group.update()
+
+    obstacle_group.draw(screen)
+    obstacle_group.update()
+
+    scroll -= 5
+    if abs(scroll) > bg_width:
+        scroll = 0
+
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+    if random.randint(1, 100) == 1:
+        create_obstacle()
+
+    pygame.display.update()
+
+pygame.quit()
