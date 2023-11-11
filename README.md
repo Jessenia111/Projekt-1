@@ -1,3 +1,3 @@
 # Projekt-1
-print("Hello world")
+Selles projektis teeme mängu, kus tegelane hüppab üle takistuste 
 
